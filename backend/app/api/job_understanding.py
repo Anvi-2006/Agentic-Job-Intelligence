@@ -1,0 +1,48 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from backend.app.core.database import get_db
+from backend.app.schemas.job_understanding import JobUnderstandingResponse
+from backend.app.services.job_service import get_job
+from backend.app.services.job_understanding_service import (
+    extract_job_requirements,
+    save_job_requirements,
+)
+
+router = APIRouter(
+    prefix="/api/job-understanding",
+    tags=["Job Understanding"],
+)
+
+
+@router.get(
+    "/{job_id}",
+    response_model=JobUnderstandingResponse,
+)
+def understand_job_endpoint(
+    job_id: UUID,
+    db: Session = Depends(get_db),
+):
+    job = get_job(db, job_id)
+
+    if job is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Job not found",
+        )
+
+    requirements = extract_job_requirements(job.description)
+
+    save_job_requirements(
+        db=db,
+        job_id=job.id,
+        requirements=requirements,
+    )
+
+    return JobUnderstandingResponse(
+        job_id=job.id,
+        requirements=requirements,
+        total_requirements=len(requirements),
+    )
