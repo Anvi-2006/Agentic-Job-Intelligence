@@ -16,9 +16,22 @@ def normalize_text(value: str) -> str:
 PARTIAL_MATCHES = {
     "postgresql": {"sql", "databases"},
     "sql": {"postgresql", "mysql", "database", "databases"},
-    "rest apis": {"fastapi", "django"},
+    "rest apis": {"fastapi", "django", "node.js"},
     "databases": {"sql", "postgresql", "mysql", "mongodb"},
-    "problem solving": {"algorithms", "data structures"},
+    "problem solving": {"algorithms", "data structures", "data structures & algorithms"},
+    "algorithms": {"problem solving", "data structures", "data structures & algorithms"},
+    "data structures": {"algorithms", "problem solving", "data structures & algorithms"},
+    "machine learning": {
+        "supervised & unsupervised learning",
+        "deep learning",
+    },
+    "deep learning": {"machine learning"},
+    "large language models": {"llms", "generative ai"},
+    "llms": {"large language models", "generative ai"},
+    "generative ai": {"large language models", "llms"},
+    "natural language processing": {"llms", "generative ai"},
+    "communication": {"teamwork"},
+    "teamwork": {"communication"},
 }
 
 

@@ -6,27 +6,51 @@ from backend.app.models.job_requirement import JobRequirement
 
 
 KNOWN_REQUIREMENTS = [
+    # Programming
     "Python",
     "Java",
     "C++",
     "JavaScript",
     "TypeScript",
+
+    # Frameworks
     "React",
     "FastAPI",
     "Django",
     "Node.js",
+
+    # Data / backend
     "SQL",
     "PostgreSQL",
     "MongoDB",
     "REST APIs",
     "Databases",
+
+    # Engineering tools
     "Git",
     "Docker",
     "AWS",
     "Azure",
+
+    # AI / ML
     "Machine Learning",
     "Deep Learning",
+    "Natural Language Processing",
+    "Computer Vision",
+    "Large Language Models",
+    "LLMs",
+    "Generative AI",
+
+    # Core engineering
+    "Algorithms",
+    "Data Structures",
     "Problem Solving",
+    "System Design",
+
+    # Professional
+    "Communication",
+    "Teamwork",
+    "Leadership",
 ]
 
 
