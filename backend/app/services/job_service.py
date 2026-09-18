@@ -42,3 +42,37 @@ def get_jobs(
         .order_by(Job.company, Job.title)
         .all()
     )
+    
+def upsert_external_job(
+    db: Session,
+    job_data: dict,
+) -> Job:
+    existing = (
+        db.query(Job)
+        .filter(
+            Job.source == job_data["source"],
+            Job.external_id == job_data["external_id"],
+        )
+        .first()
+    )
+
+    if existing:
+        for field in (
+            "title",
+            "company",
+            "location",
+            "description",
+            "job_url",
+        ):
+            setattr(existing, field, job_data.get(field))
+
+        db.commit()
+        db.refresh(existing)
+        return existing
+
+    job = Job(**job_data)
+    db.add(job)
+    db.commit()
+    db.refresh(job)
+
+    return job

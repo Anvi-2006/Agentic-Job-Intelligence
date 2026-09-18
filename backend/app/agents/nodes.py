@@ -19,6 +19,9 @@ from backend.app.services.application_package_service import (
 from backend.app.services.application_package_persistence_service import (
     save_application_package,
 )
+from backend.app.tools.external_job_search import search_external_jobs
+from backend.app.services.job_service import upsert_external_job
+from backend.app.core.config import settings
 
 def initialize_agent(state: AgentState) -> AgentState:
     """
@@ -146,6 +149,29 @@ def search_jobs_node(state: AgentState) -> AgentState:
             db=db,
             keywords=search_query,
         )
+        
+        external_jobs = search_external_jobs(
+            greenhouse_boards=[
+                item.strip()
+                for item in settings.greenhouse_boards.split(",")
+                if item.strip()
+            ],
+            lever_companies=[
+                item.strip()
+                for item in settings.lever_companies.split(",")
+                if item.strip()
+            ],
+            roles=state.get("preferred_roles", []),
+            skills=state.get("search_keywords", []),
+            locations=preferred_locations,
+        )
+        
+        for external_job in external_jobs:
+            job = upsert_external_job(db, external_job)
+            jobs.append({
+                **external_job,
+                "job_id": str(job.id),
+            })
 
         # If locations were identified, keep jobs whose location
         # matches the user's preferred location.

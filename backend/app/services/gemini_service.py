@@ -8,6 +8,46 @@ from backend.app.schemas.resume import CandidateResume
 
 client = genai.Client(api_key=settings.gemini_api_key)
 
+def _normalize_candidate_signature(
+    cover_letter: str,
+    candidate_name: str,
+) -> str:
+    """
+    Ensure a generated cover letter does not contain a generic
+    placeholder candidate name in its signature.
+
+    The candidate name comes from the verified candidate record,
+    so replacing known placeholders is deterministic and safe.
+    """
+    if not cover_letter or not candidate_name.strip():
+        return cover_letter
+
+    verified_name = candidate_name.strip()
+
+    placeholder_names = {
+        "candidate",
+        "applicant",
+        "your name",
+        "[name]",
+        "[your name]",
+        "[candidate name]",
+    }
+
+    pattern = re.compile(
+        r"(?im)^(\s*Sincerely,\s*)([^\n]+)\s*$"
+    )
+
+    def replace_signature(match: re.Match) -> str:
+        prefix = match.group(1)
+        signature_name = match.group(2).strip()
+
+        if signature_name.lower() in placeholder_names:
+            return f"{prefix}{verified_name}"
+
+        return match.group(0)
+
+    return pattern.sub(replace_signature, cover_letter)
+
 def _normalize_generated_text(text: str) -> str:
     """
     Normalize safe formatting artifacts from LLM-generated text
@@ -147,9 +187,23 @@ def generate_search_intent_fallback(user_goal: str) -> dict:
 
 def generate_search_intent(user_goal: str) -> dict:
     """
-    Use Gemini to convert a natural-language job search request
-    into structured search intent.
+    Convert a job search request into structured search intent.
+    Uses a fast path for simple searches and Gemini for complex requests.
     """
+
+    query = user_goal.strip()
+
+    # Fast path for simple job-role searches
+    if query and len(query.split()) <= 4:
+        return {
+            "roles": [query.lower()],
+            "locations": [],
+            "experience_level": None,
+            "work_mode": None,
+            "employment_type": None,
+            "skills": [],
+            "company_preferences": [],
+        }
 
     prompt = f"""
 You are a job-search intent extraction assistant.
@@ -157,7 +211,7 @@ You are a job-search intent extraction assistant.
 Convert the user's job search request into structured JSON.
 
 USER REQUEST:
-{user_goal}
+{query}
 
 Extract:
 
@@ -193,51 +247,49 @@ Return exactly this structure:
 """
 
     try:
-            interaction = client.interactions.create(
-                model="gemini-3.6-flash",
-                input=prompt,
-                generation_config={
-                    "thinking_level": "low",
-                },
+        interaction = client.interactions.create(
+            model="gemini-3.6-flash",
+            input=prompt,
+            generation_config={
+                "thinking_level": "low",
+            },
+        )
+
+        response_text = interaction.output_text
+
+        if not response_text:
+            raise RuntimeError(
+                "Gemini returned an empty search intent"
             )
 
-            response_text = interaction.output_text
+        response_text = response_text.strip()
 
-            if not response_text:
-                raise RuntimeError(
-                    "Gemini returned an empty search intent"
-                )
-
+        if response_text.startswith("```"):
+            response_text = response_text.removeprefix("```json")
+            response_text = response_text.removeprefix("```")
+            response_text = response_text.removesuffix("```")
             response_text = response_text.strip()
 
-            if response_text.startswith("```"):
-                response_text = response_text.removeprefix("```json")
-                response_text = response_text.removeprefix("```")
-                response_text = response_text.removesuffix("```")
-                response_text = response_text.strip()
+        start = response_text.find("{")
+        end = response_text.rfind("}")
 
-            start = response_text.find("{")
-            end = response_text.rfind("}")
+        if start == -1 or end == -1 or start > end:
+            raise RuntimeError(
+                "Gemini returned invalid JSON for search intent"
+            )
 
-            if start == -1 or end == -1 or start > end:
-                raise RuntimeError(
-                    "Gemini returned invalid JSON for search intent"
-                )
+        json_text = response_text[start:end + 1]
 
-            json_text = response_text[start:end + 1]
+        try:
+            return json.loads(json_text)
 
-            try:
-                return json.loads(json_text)
-
-            except json.JSONDecodeError as exc:
-                raise RuntimeError(
-                    "Gemini returned invalid JSON for search intent"
-                ) from exc
+        except json.JSONDecodeError as exc:
+            raise RuntimeError(
+                "Gemini returned invalid JSON for search intent"
+            ) from exc
 
     except Exception:
-        return generate_search_intent_fallback(user_goal)
-
-   
+        return generate_search_intent_fallback(query)
 
 def generate_resume_tailoring(
     job_title: str,
@@ -353,6 +405,8 @@ Return ONLY the resume summary text.
         )
 
     return summary
+
+
 
 def generate_complete_application_package(
     job_title: str,
@@ -654,6 +708,11 @@ Return exactly this structure:
 
     parsed["cover_letter"] = _normalize_generated_text(
         parsed["cover_letter"]
+    )
+
+    parsed["cover_letter"] = _normalize_candidate_signature(
+        cover_letter=parsed["cover_letter"],
+        candidate_name=candidate_name,
     )
 
     normalized_strengths = []
@@ -1422,6 +1481,12 @@ Return exactly this structure:
     parsed["cover_letter"] = _normalize_generated_text(
         parsed["cover_letter"]
     )
+    
+    parsed["cover_letter"] = _normalize_candidate_signature(
+        cover_letter=parsed["cover_letter"],
+        candidate_name=candidate_name,
+    )
+
 
     normalized_strengths = []
 
