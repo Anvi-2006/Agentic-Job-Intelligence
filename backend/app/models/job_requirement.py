@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import ForeignKey, String
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.core.database import Base
@@ -32,4 +32,12 @@ class JobRequirement(Base):
     importance: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "job_id",
+            "requirement",
+            name="uq_job_requirement_job_requirement",
+        ),
     )

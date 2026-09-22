@@ -1,5 +1,6 @@
+from backend.app.api.execution_events import router as execution_events_router
 from fastapi import FastAPI
-
+from fastapi.middleware.cors import CORSMiddleware
 from backend.app.api.candidates import router as candidates_router
 from backend.app.api.users import router as users_router
 from backend.app.api.skills import router as skills_router
@@ -21,8 +22,10 @@ from backend.app.api.application_package import (
 from backend.app.api.application_review import router as application_review_router
 from backend.app.api.application_tracker import router as application_tracker_router
 from backend.app.api.resume_upload import router as resume_upload_router
-
-
+from backend.app.api.application_execution import router as application_execution_router
+from backend.app.api.human_input import (
+    router as human_input_router,
+)
 
 
 app = FastAPI(
@@ -30,7 +33,22 @@ app = FastAPI(
     description="AI-powered job intelligence and application platform",
     version="0.1.0",
 )
-
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+        "http://localhost:5175",
+        "http://127.0.0.1:5175",
+        "http://localhost:5176",
+        "http://127.0.0.1:5176",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(candidates_router)
 app.include_router(users_router)
@@ -51,7 +69,9 @@ app.include_router(application_package_router)
 app.include_router(application_review_router)
 app.include_router(application_tracker_router)
 app.include_router(resume_upload_router)
-
+app.include_router(application_execution_router)
+app.include_router(execution_events_router)
+app.include_router(human_input_router)
 
 @app.get("/")
 def root():

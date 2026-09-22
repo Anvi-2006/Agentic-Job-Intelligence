@@ -1,7 +1,12 @@
 import re
-from urllib.parse import urljoin
-
+from html import unescape
 import requests
+
+
+def clean_job_description(html: str) -> str:
+    text = unescape(html or "")
+    text = re.sub(r"<[^>]+>", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
 def search_greenhouse_jobs(
@@ -35,7 +40,7 @@ def search_greenhouse_jobs(
                 "title": job.get("title", ""),
                 "company": board_token,
                 "location": location.get("name"),
-                "description": job.get("content", ""),
+                "description": clean_job_description(job.get("content", "")),
                 "source": "greenhouse",
                 "job_url": job.get("absolute_url"),
             }
@@ -70,7 +75,7 @@ def search_lever_jobs(
                 "title": job.get("text", ""),
                 "company": company_slug,
                 "location": categories.get("location"),
-                "description": job.get("descriptionPlain", ""),
+                "description": clean_job_description(job.get("descriptionPlain", "")),
                 "source": "lever",
                 "job_url": job.get("hostedUrl"),
             }
@@ -80,12 +85,25 @@ def search_lever_jobs(
 
 
 def matches_text(text: str, term: str) -> bool:
-    return bool(
-        re.search(
-            rf"\b{re.escape(term.lower().strip())}\b",
-            text,
-        )
+    text = text.lower()
+    term = term.lower().strip()
+
+    if not term:
+        return False
+
+    if re.search(rf"\b{re.escape(term)}\b", text):
+        return True
+
+    tokens = term.split()
+
+    if len(tokens) == 1:
+        return re.search(rf"\b{re.escape(tokens[0])}\b", text) is not None
+
+    return all(
+        re.search(rf"\b{re.escape(token)}\b", text)
+        for token in tokens
     )
+
 
 def search_external_jobs(
     greenhouse_boards: list[str] | None = None,
@@ -152,5 +170,14 @@ def search_external_jobs(
                 for term in location_terms
             )
         ]
+
+    seen = set()
+    jobs = [
+        job for job in jobs
+        if not (
+            (job["source"], job["external_id"]) in seen
+            or seen.add((job["source"], job["external_id"]))
+        )
+    ]
 
     return jobs

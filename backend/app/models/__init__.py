@@ -9,6 +9,9 @@ from backend.app.models.candidate_evidence import CandidateEvidence
 from backend.app.models.job_requirement import JobRequirement
 from backend.app.models.application import Application
 from backend.app.models.application_package import ApplicationPackage
+from backend.app.models.semantic_match_cache import SemanticMatchCache
+from backend.app.models.application_execution import ApplicationExecution
+from backend.app.models.human_input_request import HumanInputRequest
 
 __all__ = [
     "User",
@@ -22,3 +25,4 @@ __all__ = [
     "CandidateEvidence",
     "JobRequirement",    
 ]
+from backend.app.models.execution_event import ExecutionEvent

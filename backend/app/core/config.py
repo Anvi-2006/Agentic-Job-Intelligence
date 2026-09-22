@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     app_name: str = "Agentic Job Intelligence API"
     database_url: str
     gemini_api_key: str
+    greenhouse_boards: str = ""
+    lever_companies: str = ""
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

@@ -5,6 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from backend.app.core.database import Base
 
+
 class Job(Base):
     __tablename__ = "jobs"
 
