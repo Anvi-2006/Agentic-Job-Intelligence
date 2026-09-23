@@ -89,10 +89,50 @@ def execute_application_browser_step(
             )
 
             if not form_detected:
-                raise ValueError(
-                    "No application form was detected "
-                    "on the application page."
+                execution.status = EXECUTION_STATUS_NEEDS_HUMAN
+                execution.current_action = "browser_human_intervention"
+
+                create_human_input_request(
+                    db=db,
+                    execution_id=execution.id,
+                    field_name="application_form",
+                    question=(
+                        "No application form was detected on the "
+                        "application page. Please provide a valid "
+                        "application form URL or resolve the page "
+                        "so the application can continue."
+                    ),
                 )
+
+                record_execution_event(
+                    db=db,
+                    execution_id=execution.id,
+                    event_type="BROWSER_HUMAN_INTERVENTION_REQUIRED",
+                    step=execution.current_step + 1,
+                    action="browser_human_intervention",
+                    details=(
+                        "Browser could not detect an application form. "
+                        "Human intervention is required before execution "
+                        "can continue."
+                    ),
+                    success=True,
+                    commit=False,
+                )
+
+                db.commit()
+                db.refresh(execution)
+
+                return {
+                    "status": EXECUTION_STATUS_NEEDS_HUMAN,
+                    "application_id": str(application_id),
+                    "execution_id": str(execution.id),
+                    "form_detected": False,
+                    "page": page_data,
+                    "execution": {
+                        "current_step": execution.current_step,
+                        "current_action": execution.current_action,
+                    },
+                }
 
             plan = agent.build_execution_plan(
                 page_data=page_data,
