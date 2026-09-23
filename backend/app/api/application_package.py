@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
@@ -12,6 +13,9 @@ from backend.app.services.application_package_query_service import (
 )
 from backend.app.services.application_package_service import (
     generate_application_package,
+)
+from backend.app.services.application_package_persistence_service import (
+    save_application_package,
 )
 
 
@@ -37,6 +41,16 @@ def generate_application_package_endpoint(
             job_id=job_id,
         )
 
+        saved_package = save_application_package(
+            db=db,
+            candidate_id=candidate_id,
+            job_id=job_id,
+            package=package,
+            agent_decision=package["recommendation"].lower(),
+        )
+
+        package["application_id"] = saved_package.application_id
+
         return package
 
     except ValueError as exc:
@@ -50,7 +64,6 @@ def generate_application_package_endpoint(
             status_code=500,
             detail=f"Application package generation failed: {type(exc).__name__}",
         ) from exc
-
 
 @router.get(
     "/{candidate_id}/{job_id}",

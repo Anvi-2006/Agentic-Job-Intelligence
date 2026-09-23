@@ -189,7 +189,7 @@ def generate_application_package(
     )
 
     tailored_summary = ai_package["tailored_summary"]
-    
+
 
     validation_result = _validate_generated_package(
         ai_package=ai_package,
@@ -232,7 +232,7 @@ def generate_application_package(
             )
 
             break
-        
+
         validation_result = _validate_generated_package(
             ai_package=ai_package,
             evidence=evidence,
@@ -240,7 +240,7 @@ def generate_application_package(
             candidate_name=candidate_name,
         )
 
-            
+
     # ---------------------------------------------------------
     # Final result
     # ---------------------------------------------------------
@@ -248,10 +248,12 @@ def generate_application_package(
     cover_letter = ai_package["cover_letter"]
 
     return {
+
         "candidate_id": candidate_id,
         "job_id": job_id,
         "company": job.company,
         "job_title": job.title,
+        "fit_score": fit["score"],
         "readiness_score": readiness["readiness_score"],
         "recommendation": readiness["recommendation"],
         "tailored_summary": ai_package["tailored_summary"],

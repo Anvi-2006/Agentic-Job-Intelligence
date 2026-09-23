@@ -11,22 +11,35 @@ def _find_spacing_issues(text: str) -> list[str]:
     if re.search(r"[,;:!?][A-Za-z]", text):
         issues.append("missing space after punctuation")
 
-    # Detect common word concatenation patterns without
-    # treating legitimate CamelCase technical names as errors.
-    concatenation_patterns = [
-        r"\b[A-Za-z]{2,}(?:and|or|using|with|for|to|of|in|as)[A-Z][a-z]+",
-        r"\b(?:and|or|using|with|for|to|of|in|as)(?:Python|FastAPI|PostgreSQL|LangChain|Streamlit|BeautifulSoup)\b",
+    # Detect specific LLM formatting artifacts observed in real
+    # application-package generation.
+    #
+    # Keep this intentionally conservative. We do NOT use a generic
+    # CamelCase detector because legitimate technical names and
+    # existing valid content may contain forms such as multi-agentAI.
+    known_concatenations = [
+        r"\bprojectexperience\b",
+        r"\binbackend\b",
+        r"\bwithFastAPI\b",
+        r"\bwithPython\b",
+        r"\busingFastAPI\b",
+        r"\busingPython\b",
+        r"\bbuilda\b",
+        r"\bmyskills\b",
+        r"\bpersistentdata\b",
     ]
 
-    for pattern in concatenation_patterns:
+    for pattern in known_concatenations:
         if re.search(pattern, text):
             issues.append("missing space between words")
+            break
 
     # Spaces accidentally inserted before punctuation.
     if re.search(r"\s+([,.;:!?])", text):
         issues.append("space before punctuation")
 
     return list(dict.fromkeys(issues))
+
 
 
 def _find_repeated_spaces(text: str) -> list[str]:

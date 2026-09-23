@@ -1,4 +1,4 @@
-from uuid import UUID
+﻿from uuid import UUID
 
 from sqlalchemy.orm import Session
 
@@ -33,16 +33,15 @@ def save_application_package(
         application = Application(
             candidate_id=candidate_id,
             job_id=job_id,
-            fit_score=package["readiness_score"],
+            fit_score=package["fit_score"],
             recommendation=package["recommendation"],
             status="pending_review",
         )
         db.add(application)
         db.flush()
     else:
-        application.fit_score = package["readiness_score"]
+        application.fit_score = package["fit_score"]
         application.recommendation = package["recommendation"]
-
         if application.status not in {
             "approved",
             "rejected",

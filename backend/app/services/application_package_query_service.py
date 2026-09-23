@@ -54,6 +54,7 @@ def get_saved_application_package(
         raise ValueError("Application package not found")
 
     return {
+        "application_id": application.id,
         "candidate_id": candidate_id,
         "job_id": job_id,
         "company": job.company,

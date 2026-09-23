@@ -117,3 +117,54 @@ def review_application(
         "status": application.status,
         "reviewer_note": application.reviewer_note,
     }
+
+def get_application_review(
+    db: Session,
+    application_id: UUID,
+) -> dict:
+    application = db.get(Application, application_id)
+
+    if application is None:
+        raise ValueError("Application not found.")
+
+    job = db.get(Job, application.job_id)
+
+    if job is None:
+        raise ValueError("Job not found.")
+
+    candidate = db.get(CandidateProfile, application.candidate_id)
+
+    if candidate is None:
+        raise ValueError("Candidate not found.")
+
+    application_package = (
+        db.query(ApplicationPackage)
+        .filter(
+            ApplicationPackage.application_id == application.id,
+        )
+        .first()
+    )
+
+    if application_package is None:
+        raise ValueError("Application package not found.")
+
+    return {
+        "application_id": str(application.id),
+        "candidate_id": str(application.candidate_id),
+        "job_id": str(application.job_id),
+        "company": job.company,
+        "job_title": job.title,
+        "fit_score": application.fit_score,
+        "recommendation": application.recommendation,
+        "status": application.status,
+        "reviewer_note": application.reviewer_note,
+        "readiness_score": application_package.readiness_score,
+        "tailored_summary": application_package.tailored_summary,
+        "cover_letter": application_package.cover_letter,
+        "key_strengths": application_package.key_strengths,
+        "missing_requirements": application_package.missing_requirements,
+        "application_questions": application_package.application_questions,
+        "evidence_used": application_package.evidence_used,
+        "unsupported_claims": application_package.unsupported_claims,
+        "is_valid": application_package.is_valid,
+    }

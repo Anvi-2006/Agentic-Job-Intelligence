@@ -49,6 +49,10 @@ def main():
     missing_requirements = []
 
     bad_package = {
+        "tailored_summary": (
+            "Detail-oriented candidate with experience "
+            "building ResearchMind systems."
+        ),
         "cover_letter": (
             "Ihave built backend APIs using FastAPI and PostgreSQL.\n\n"
             "Sincerely,\n"
@@ -81,10 +85,6 @@ def main():
 
     result = _validate_generated_package(
         ai_package=bad_package,
-        tailored_summary=(
-            "Detail-oriented candidate with experience "
-            "building ResearchMind systems."
-        ),
         evidence=candidate_evidence,
         missing_requirements=missing_requirements,
         candidate_name="Test Candidate",

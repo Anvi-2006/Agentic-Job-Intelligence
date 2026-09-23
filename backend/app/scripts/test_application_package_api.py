@@ -37,6 +37,7 @@ def main():
             "job_id": job.id,
             "company": job.company,
             "job_title": job.title,
+	    "fit_score": 90,
             "readiness_score": 85.0,
             "recommendation": "APPLY",
             "tailored_summary": (

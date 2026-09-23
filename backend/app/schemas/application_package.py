@@ -10,6 +10,7 @@ class ApplicationAnswer(BaseModel):
 
 
 class ApplicationPackageResponse(BaseModel):
+    application_id:UUID
     candidate_id: UUID
     job_id: UUID
 
