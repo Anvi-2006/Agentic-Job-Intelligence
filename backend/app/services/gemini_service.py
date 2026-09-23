@@ -406,7 +406,124 @@ Return ONLY the resume summary text.
 
     return summary
 
+def evaluate_semantic_requirement_matches(
+    requirements: list[str],
+    candidate_evidence: list[dict],
+) -> list[dict]:
+    """
+    Evaluate unresolved job requirements against verified candidate evidence.
 
+    Gemini only determines semantic support. It does not calculate the
+    overall candidate-job fit score.
+    """
+    if not requirements or not candidate_evidence:
+        return []
+
+    requirements_text = "\n".join(
+        f"- {requirement}"
+        for requirement in requirements
+    )
+
+    evidence_text = "\n".join(
+        (
+            f"- [{item['category']}] "
+            f"{item['title']}: "
+            f"{item['content']}"
+        )
+        for item in candidate_evidence
+    )
+
+    prompt = f"""
+You are a semantic job-requirement matching evaluator.
+
+Determine whether the VERIFIED CANDIDATE EVIDENCE supports each
+JOB REQUIREMENT.
+
+JOB REQUIREMENTS:
+{requirements_text}
+
+VERIFIED CANDIDATE EVIDENCE:
+{evidence_text}
+
+STRICT RULES:
+
+1. Use ONLY the verified candidate evidence.
+2. Do not invent candidate skills or experience.
+3. Do not treat a job requirement alone as evidence.
+4. A requirement is "matched" only when the evidence clearly
+   demonstrates the candidate has that skill or experience.
+5. A requirement is "partial" when the evidence is meaningfully
+   related but does not clearly demonstrate the exact requirement.
+6. Use "missing" when the evidence does not support the requirement.
+7. Project experience may provide partial or matched evidence when
+   the project clearly demonstrates the requirement.
+8. Do not treat unrelated technologies as equivalent.
+9. Do not assume that two technologies are interchangeable.
+10. Return one result for EVERY requirement.
+11. Return ONLY valid JSON.
+
+Return exactly:
+
+{{
+  "matches": [
+    {{
+      "requirement": "string",
+      "status": "matched | partial | missing",
+      "evidence_titles": [
+        "exact evidence title"
+      ],
+      "reason": "short explanation"
+    }}
+  ]
+}}
+"""
+
+    interaction = client.interactions.create(
+        model="gemini-3.6-flash",
+        input=prompt,
+        generation_config={
+            "thinking_level": "low",
+        },
+    )
+
+    response_text = interaction.output_text
+
+    if not response_text:
+        raise RuntimeError(
+            "Gemini returned an empty semantic matching response"
+        )
+
+    response_text = response_text.strip()
+
+    if response_text.startswith("```"):
+        response_text = response_text.removeprefix("```json")
+        response_text = response_text.removeprefix("```")
+        response_text = response_text.removesuffix("```")
+        response_text = response_text.strip()
+
+    start = response_text.find("{")
+    end = response_text.rfind("}")
+
+    if start == -1 or end == -1 or start > end:
+        raise RuntimeError(
+            "Gemini returned invalid JSON for semantic matching"
+        )
+
+    try:
+        parsed = json.loads(response_text[start:end + 1])
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            "Gemini returned invalid JSON for semantic matching"
+        ) from exc
+
+    matches = parsed.get("matches")
+
+    if not isinstance(matches, list):
+        raise RuntimeError(
+            "Gemini semantic matching response must contain a matches list"
+        )
+
+    return matches
 
 def generate_complete_application_package(
     job_title: str,
