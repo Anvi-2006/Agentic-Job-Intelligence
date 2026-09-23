@@ -4,6 +4,7 @@ from uuid import uuid4
 from backend.app.core.database import SessionLocal
 from backend.app.models.application import Application
 from backend.app.models.application_package import ApplicationPackage
+from backend.app.models.human_input_request import HumanInputRequest
 from backend.app.models.execution_event import ExecutionEvent
 from backend.app.models.application_execution import (
     ApplicationExecution,
@@ -35,7 +36,7 @@ def main() -> None:
             db.query(Application)
             .filter(
                 Application.id
-                == "a9234440-f94f-4650-889f-b4d3c463ffd5"
+                == "69872582-adea-400b-be7f-e054780165e5"
             )
             .first()
         )
@@ -293,6 +294,10 @@ def main() -> None:
         if temporary_execution is not None:
             db.query(ExecutionEvent).filter(
                 ExecutionEvent.execution_id == temporary_execution.id,
+            ).delete(synchronize_session=False)
+
+            db.query(HumanInputRequest).filter(
+                HumanInputRequest.execution_id == temporary_execution.id,
             ).delete(synchronize_session=False)
 
             db.query(ApplicationExecution).filter(

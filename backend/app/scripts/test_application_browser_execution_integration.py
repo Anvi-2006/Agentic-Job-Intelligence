@@ -17,7 +17,7 @@ from backend.app.services.application_execution_service import (
 
 
 SOURCE_APPLICATION_ID = UUID(
-    "a9234440-f94f-4650-889f-b4d3c463ffd5"
+    "69872582-adea-400b-be7f-e054780165e5"
 )
 
 

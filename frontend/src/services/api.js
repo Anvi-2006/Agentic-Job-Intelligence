@@ -23,9 +23,13 @@ export async function getJob(jobId) {
 export async function getJobFit(jobId) {
   const response = await api.get(
     `/api/job-fit/${CANDIDATE_ID}/${jobId}`,
+    {
+      timeout: 240000,
+    },
   )
   return response.data
 }
+
 export async function generateApplicationPackage(jobId) {
   const response = await api.post(
     `/api/application-package/${CANDIDATE_ID}/${jobId}/generate`,
