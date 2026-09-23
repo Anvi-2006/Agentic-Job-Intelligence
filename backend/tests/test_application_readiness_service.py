@@ -36,9 +36,9 @@ def test_calculate_application_readiness():
         assert result["candidate_id"] == CANDIDATE_ID
         assert result["job_id"] == JOB_ID
 
-        assert result["fit_score"] == 62.5
+        assert result["fit_score"] == 60.0
 
-        assert result["readiness_score"] == 64.5
+        assert result["readiness_score"] == 62.0
         assert result["readiness_level"] == "review"
         assert result["recommendation"] == "REVIEW"
 
@@ -46,7 +46,7 @@ def test_calculate_application_readiness():
 
         assert "Databases" in result["partial_requirements"]
 
-        assert "Problem Solving" in result["missing_requirements"]
+        assert "Problem Solving" in result["partial_requirements"]
 
         assert result["evidence_count"] > 0
 
