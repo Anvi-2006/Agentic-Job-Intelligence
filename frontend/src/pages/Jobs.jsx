@@ -27,15 +27,10 @@ function Jobs() {
       try {
         setLoading(true)
         setError('')
-        console.log('SEARCH QUERY:', query)
 
-        setLoading(true)
-
-        console.log('CALLING searchJobs')
         const data = query.trim()
           ? await searchJobs(query)
           : []
-        console.log('SEARCH RESULT:', data)
 
         if (!cancelled) setJobs(data)
       } catch (err) {
