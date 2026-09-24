@@ -2046,3 +2046,54 @@ input:focus-visible {
 .verification-confidence {
   color: var(--text-secondary);
 }
+
+.review-execution-card {
+  margin: 20px 0;
+  padding: 18px;
+  border: 1px solid #dbe3ff;
+  border-radius: 12px;
+  background: #f7f8ff;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.review-execution-icon {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 10px;
+  background: #e8ecff;
+  color: #5367d9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.review-execution-content {
+  min-width: 0;
+}
+
+.review-execution-content .eyebrow {
+  margin-bottom: 5px;
+}
+
+.review-execution-content h3 {
+  margin: 0 0 7px;
+  font-size: 16px;
+  color: #1f2937;
+}
+
+.review-execution-content p:not(.eyebrow) {
+  margin: 0 0 15px;
+  color: #667085;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.review-execution-content .primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  text-decoration: none;
+}

@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   FileText,
   LoaderCircle,
+  Play,
   XCircle,
 } from 'lucide-react'
 
@@ -236,6 +237,34 @@ function ApplicationReview() {
                 Current status: <strong>{packageData.status}</strong>
               </div>
 
+              {packageData.status === 'approved' && (
+                <div className="review-execution-card">
+                  <div className="review-execution-icon">
+                    <Play size={20} />
+                  </div>
+
+                  <div className="review-execution-content">
+                    <p className="eyebrow">Application approved</p>
+                    <h3>Ready for application execution</h3>
+                    <p>
+                      Your application package has been approved. ApplyIQ can
+                      now open the application page, complete supported fields,
+                      and pause whenever human input or submission approval is
+                      required.
+                    </p>
+
+                    <Link
+                      to={`/execution/${applicationId}`}
+                      className="primary-button"
+                    >
+                      <Play size={16} />
+                      Start application execution
+                    </Link>
+                  </div>
+                </div>
+              )}
+
+              
               {!packageData.is_valid && (
                 <div className="review-blocked">
                   <XCircle size={18} />

@@ -8,6 +8,7 @@ import {
   Clock3,
   FileText,
   LoaderCircle,
+  Play,
   XCircle,
 } from 'lucide-react'
 
@@ -310,13 +311,23 @@ function Applications() {
                   <span>{formatDate(application.updated_at)}</span>
                 </div>
 
-                <Link
-                  to={`/review/${application.application_id}`}
-                  className="application-review-link"
-                >
-                  Review
-                  <ArrowUpRight size={15} />
-                </Link>
+                {application.status === 'approved' ? (
+                  <Link
+                    to={`/execution/${application.application_id}`}
+                    className="application-review-link application-execution-link"
+                  >
+                    <Play size={15} />
+                    Execute
+                  </Link>
+                ) : (
+                  <Link
+                    to={`/review/${application.application_id}`}
+                    className="application-review-link"
+                  >
+                    Review
+                    <ArrowUpRight size={15} />
+                  </Link>
+                )}
               </article>
             ))}
           </div>

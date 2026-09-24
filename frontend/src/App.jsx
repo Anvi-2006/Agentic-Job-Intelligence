@@ -8,7 +8,7 @@ import JobDetails from './pages/JobDetails'
 import ApplicationPackage from './pages/ApplicationPackage'
 import ApplicationReview from './pages/ApplicationReview'
 import Applications from './pages/Applications'
-
+import ApplicationExecution from './pages/ApplicationExecution'
 
 function App() {
   return (
@@ -22,6 +22,10 @@ function App() {
         <Route
           path="/review/:applicationId"
           element={<ApplicationReview />}
+        />
+        <Route
+          path="/execution/:applicationId"
+          element={<ApplicationExecution />}
         />
         <Route path="/profile" element={<PlaceholderPage />} />
         <Route path="/settings" element={<PlaceholderPage />} />

@@ -10,6 +10,77 @@ const api = axios.create({
 
 const CANDIDATE_ID = '332b3f24-eefc-4d05-99d5-56798d24a50c'
 
+
+export async function getApplicationExecution(applicationId) {
+  const response = await api.get(
+    `/api/applications/${applicationId}/execution`,
+  )
+  return response.data
+}
+
+export async function createApplicationExecution(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution`,
+  )
+  return response.data
+}
+
+export async function startApplicationExecution(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/start`,
+  )
+  return response.data
+}
+
+export async function getExecutionEvents(applicationId) {
+  const response = await api.get(
+    `/api/applications/${applicationId}/execution/events`,
+  )
+  return response.data
+}
+
+export async function resumeApplicationExecution(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/resume`,
+  )
+  return response.data
+}
+
+export async function requestSubmissionApproval(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/request-submission-approval`,
+  )
+  return response.data
+}
+
+export async function approveApplicationSubmission(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/approve-submission`,
+  )
+  return response.data
+}
+
+export async function markApplicationSubmitted(applicationId) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/submitted`,
+  )
+  return response.data
+}
+
+export async function executeApplicationBrowser(applicationId, applicationUrl, headless = true) {
+  const response = await api.post(
+    `/api/applications/${applicationId}/execution/browser`,
+    {
+      application_url: applicationUrl,
+      headless,
+    },
+    {
+      timeout: 120000,
+    },
+  )
+  return response.data
+}
+
 export async function getJobs() {
   const response = await api.get('/api/jobs')
   return response.data
