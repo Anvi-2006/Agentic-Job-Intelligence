@@ -10,7 +10,9 @@ class AgentState(TypedDict, total=False):
     # Structured search intent
     search_keywords: list[str]
     preferred_roles: list[str]
+    preferred_skills: list[str]
     preferred_locations: list[str]
+    work_mode: str | None
 
     # Job search results
     job_ids: list[str]

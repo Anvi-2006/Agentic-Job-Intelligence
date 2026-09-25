@@ -1,12 +1,32 @@
 import re
 from html import unescape
+
 import requests
 
-
 def clean_job_description(html: str) -> str:
-    text = unescape(html or "")
+    text = html or ""
+
+    # Greenhouse may return HTML that is itself HTML-escaped.
+    # Decode entities first so encoded tags become real HTML.
+    text = unescape(text)
+
+    # Remove the now-decoded HTML tags.
     text = re.sub(r"<[^>]+>", " ", text)
-    return re.sub(r"\s+", " ", text).strip()
+
+    # Decode any remaining entities in the text.
+    text = unescape(text)
+
+    # Normalize whitespace.
+    text = re.sub(r"\s+", " ", text).strip()
+
+    # Repair common UTF-8 -> Windows-1252 mojibake if encountered.
+    if "Ã¢" in text or "Ãƒ" in text:
+        try:
+            text = text.encode("latin1").decode("utf-8")
+        except (UnicodeEncodeError, UnicodeDecodeError):
+            pass
+
+    return text
 
 
 def search_greenhouse_jobs(
@@ -171,13 +191,50 @@ def search_external_jobs(
             )
         ]
 
-    seen = set()
-    jobs = [
-        job for job in jobs
-        if not (
-            (job["source"], job["external_id"]) in seen
-            or seen.add((job["source"], job["external_id"]))
-        )
-    ]
+    def normalize_identity(value: str | None) -> str:
+        return re.sub(
+            r"[^a-z0-9]+",
+            " ",
+            (value or "").lower(),
+        ).strip()
 
-    return jobs
+
+    def job_identity(job: dict) -> tuple[str, str, str]:
+        """
+        Build a stable identity for discovery-level deduplication.
+
+        Prefer the source + external ID when available.
+        Fall back to normalized company + title + location
+        when external IDs are missing or inconsistent.
+        """
+
+        source = normalize_identity(job.get("source"))
+        external_id = normalize_identity(job.get("external_id"))
+
+        if source and external_id:
+            return ("source", source, external_id)
+
+        company = normalize_identity(job.get("company"))
+        title = normalize_identity(job.get("title"))
+        location = normalize_identity(job.get("location"))
+
+        return (
+            "content",
+            company,
+            f"{title}|{location}",
+        )
+
+
+    seen = set()
+    unique_jobs = []
+
+    for job in jobs:
+        identity = job_identity(job)
+
+        if identity in seen:
+            continue
+
+        seen.add(identity)
+        unique_jobs.append(job)
+
+    return unique_jobs

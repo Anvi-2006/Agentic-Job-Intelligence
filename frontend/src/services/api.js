@@ -5,7 +5,7 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 60000,
+  timeout: 180000,
 })
 
 const CANDIDATE_ID = '332b3f24-eefc-4d05-99d5-56798d24a50c'
@@ -101,6 +101,17 @@ export async function getJobFit(jobId) {
   return response.data
 }
 
+export async function getJobIntelligence(jobId) {
+  const response = await api.get(
+    `/api/job-intelligence/${CANDIDATE_ID}/${jobId}`,
+    {
+      timeout: 240000,
+    },
+  )
+
+  return response.data
+}
+
 export async function generateApplicationPackage(jobId) {
   const response = await api.post(
     `/api/application-package/${CANDIDATE_ID}/${jobId}/generate`,
@@ -156,6 +167,7 @@ export async function searchJobs(query) {
   return response.data.jobs.map((job) => ({
     ...job,
     id: job.job_id,
+    description: job.description_preview,
   }))
 }
 

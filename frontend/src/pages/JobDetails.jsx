@@ -4,98 +4,134 @@ import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  CircleAlert,
+  ExternalLink,
+  FileSearch,
   LoaderCircle,
   MapPin,
+  ShieldCheck,
   Sparkles,
   XCircle,
 } from 'lucide-react'
 
-import { getJob, getJobFit } from '../services/api'
+import { getJobIntelligence } from '../services/api'
+
+function getStatusIcon(status) {
+  if (status === 'matched') {
+    return <CheckCircle2 size={17} />
+  }
+
+  if (status === 'partial') {
+    return <Sparkles size={17} />
+  }
+
+  return <XCircle size={17} />
+}
+
+function getStatusLabel(status) {
+  if (status === 'matched') {
+    return 'Matched'
+  }
+
+  if (status === 'partial') {
+    return 'Partial match'
+  }
+
+  return 'Missing'
+}
+
+function getStatusClass(status) {
+  if (status === 'matched') {
+    return 'matched'
+  }
+
+  if (status === 'partial') {
+    return 'partial'
+  }
+
+  return 'missing'
+}
+
+function formatConfidence(value) {
+  return `${Math.round((value || 0) * 100)}%`
+}
 
 function JobDetails() {
   const { jobId } = useParams()
 
-  const [job, setJob] = useState(null)
-  const [fit, setFit] = useState(null)
-
-  const [loadingJob, setLoadingJob] = useState(true)
-  const [analyzing, setAnalyzing] = useState(false)
-
-  const [jobError, setJobError] = useState('')
-  const [fitError, setFitError] = useState('')
+  const [intelligence, setIntelligence] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     let cancelled = false
 
-    async function loadJob() {
+    async function loadIntelligence() {
       try {
-        setLoadingJob(true)
-        setJobError('')
+        setLoading(true)
+        setError('')
 
-        const data = await getJob(jobId)
+        const data = await getJobIntelligence(jobId)
 
         if (!cancelled) {
-          setJob(data)
+          setIntelligence(data)
         }
       } catch (err) {
         if (!cancelled) {
-          setJobError(
+          setError(
             err.response?.data?.detail ||
-              'Unable to load this job.',
+              'Unable to load job intelligence.',
           )
         }
       } finally {
         if (!cancelled) {
-          setLoadingJob(false)
+          setLoading(false)
         }
       }
     }
 
-    loadJob()
+    loadIntelligence()
 
     return () => {
       cancelled = true
     }
   }, [jobId])
 
-  async function handleAnalyzeFit() {
-    try {
-      setAnalyzing(true)
-      setFitError('')
-
-      const data = await getJobFit(jobId)
-      setFit(data)
-    } catch (err) {
-      setFitError(
-        err.response?.data?.detail ||
-          'Unable to analyze your fit for this role.',
-      )
-    } finally {
-      setAnalyzing(false)
-    }
-  }
-
-  if (loadingJob) {
+  if (loading) {
     return (
       <div className="state-card">
-        <LoaderCircle className="loading-spinner" size={24} />
-        <h3>Loading job details</h3>
-        <p>Getting the opportunity from your job workspace.</p>
+        <LoaderCircle
+          className="loading-spinner"
+          size={24}
+        />
+
+        <h3>Building job intelligence</h3>
+
+        <p>
+          Analyzing the role, candidate evidence, requirements,
+          and fit.
+        </p>
       </div>
     )
   }
 
-  if (jobError || !job) {
+  if (error || !intelligence) {
     return (
       <div className="state-card error-state">
         <div className="state-icon">
           <AlertCircle size={22} />
         </div>
 
-        <h3>We couldn't load this job</h3>
-        <p>{jobError || 'This opportunity could not be found.'}</p>
+        <h3>We couldn't analyze this job</h3>
 
-        <Link to="/jobs" className="secondary-button">
+        <p>
+          {error || 'This opportunity could not be analyzed.'}
+        </p>
+
+        <Link
+          to="/jobs"
+          className="secondary-button"
+        >
           <ArrowLeft size={15} />
           Back to jobs
         </Link>
@@ -103,12 +139,22 @@ function JobDetails() {
     )
   }
 
+  const { job, verification, fit, requirements, skill_gaps } =
+    intelligence
+
   return (
     <div className="job-details-page">
-      <Link to="/jobs" className="back-link">
+      <Link
+        to="/jobs"
+        className="back-link"
+      >
         <ArrowLeft size={16} />
         Back to jobs
       </Link>
+
+      {/* -------------------------------------------------- */}
+      {/* JOB HEADER                                         */}
+      {/* -------------------------------------------------- */}
 
       <section className="job-details-header">
         <div className="company-logo large">
@@ -116,7 +162,9 @@ function JobDetails() {
         </div>
 
         <div className="job-details-heading">
-          <p className="eyebrow">Job opportunity</p>
+          <p className="eyebrow">
+            Job intelligence
+          </p>
 
           <h1>{job.title}</h1>
 
@@ -130,189 +178,387 @@ function JobDetails() {
           </div>
         </div>
 
-        {job.source && (
+        <div className="job-header-actions">
           <span className="job-source detail-source">
             {job.source}
           </span>
-        )}
-      </section>
-
-      <div className="job-details-layout">
-        <section className="job-description-panel panel">
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">Role overview</p>
-              <h2>About this opportunity</h2>
-            </div>
-          </div>
-
-          <p className="job-full-description">
-            {job.description}
-          </p>
 
           {job.job_url && (
             <a
               href={job.job_url}
               target="_blank"
               rel="noreferrer"
-              className="secondary-button external-job-link"
+              className="secondary-button"
             >
-              Open original listing
+              <ExternalLink size={15} />
+              Original listing
             </a>
           )}
-        </section>
+        </div>
+      </section>
 
-        <aside className="fit-panel panel">
-          <div className="panel-heading">
+      {/* -------------------------------------------------- */}
+      {/* INTELLIGENCE SUMMARY                               */}
+      {/* -------------------------------------------------- */}
+
+      <section className="intelligence-summary-grid">
+        <div className="intelligence-score-card panel">
+          <div className="score-card-top">
             <div>
-              <p className="eyebrow">Candidate fit</p>
-              <h2>How well do you match?</h2>
-            </div>
-
-            <Sparkles size={20} />
-          </div>
-
-          {!fit && !analyzing && (
-            <>
-              <p className="fit-intro">
-                Compare this role with your current skills and
-                candidate evidence.
+              <p className="eyebrow">
+                Candidate fit
               </p>
 
-              <button
-                type="button"
-                className="primary-button fit-button"
-                onClick={handleAnalyzeFit}
-              >
-                <Sparkles size={16} />
-                Analyze my fit
-              </button>
-            </>
-          )}
-
-          {analyzing && (
-            <div className="fit-loading">
-              <LoaderCircle
-                className="loading-spinner"
-                size={24}
-              />
-
-              <strong>Analyzing your fit</strong>
-
-              <span>
-                Comparing your profile with the role requirements.
-              </span>
+              <h2>
+                {Math.round(fit.score)}%
+              </h2>
             </div>
-          )}
 
-          {fitError && !analyzing && (
-            <div className="fit-error">
-              <AlertCircle size={18} />
-              <span>{fitError}</span>
+            <div className="score-icon">
+              <Sparkles size={21} />
             </div>
-          )}
+          </div>
 
-          {fit && (
-            <div className="fit-results">
-              <div className="fit-score">
-                <div>
-                  <span className="fit-score-label">
-                    Fit score
-                  </span>
+          <div className="score-progress">
+            <div
+              className="score-progress-fill"
+              style={{
+                width: `${Math.min(
+                  Math.max(fit.score, 0),
+                  100,
+                )}%`,
+              }}
+            />
+          </div>
 
-                  <strong>{Math.round(fit.score)}%</strong>
+          <div className="score-meta">
+            <span>
+              {fit.matched_requirements} of{' '}
+              {fit.total_requirements} requirements
+              directly matched
+            </span>
+
+            <strong>
+              {fit.recommendation?.replaceAll('_', ' ')}
+            </strong>
+          </div>
+        </div>
+
+        <div className="intelligence-verification-card panel">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">
+                Opportunity verification
+              </p>
+
+              <h3>
+                {verification.verification_status}
+              </h3>
+            </div>
+
+            <ShieldCheck size={21} />
+          </div>
+
+          <p>
+            {verification.verification_reason}
+          </p>
+
+          <div className="verification-confidence">
+            Verification confidence:{' '}
+            <strong>
+              {formatConfidence(
+                verification.verification_confidence,
+              )}
+            </strong>
+          </div>
+        </div>
+      </section>
+
+      {/* -------------------------------------------------- */}
+      {/* MAIN INTELLIGENCE GRID                             */}
+      {/* -------------------------------------------------- */}
+
+      <div className="job-intelligence-layout">
+        {/* LEFT COLUMN */}
+
+        <section className="job-intelligence-main">
+          <div className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">
+                  Requirement intelligence
+                </p>
+
+                <h2>
+                  Why you match this role
+                </h2>
+              </div>
+
+              <FileSearch size={21} />
+            </div>
+
+            <div className="intelligence-requirements">
+              {requirements.map((requirement) => (
+                <div
+                  key={requirement.id}
+                  className={`intelligence-requirement ${getStatusClass(
+                    requirement.match_status,
+                  )}`}
+                >
+                  <div className="requirement-status-icon">
+                    {getStatusIcon(
+                      requirement.match_status,
+                    )}
+                  </div>
+
+                  <div className="requirement-content">
+                    <div className="requirement-title-row">
+                      <div>
+                        <h3>
+                          {requirement.requirement}
+                        </h3>
+
+                        <div className="requirement-tags">
+                          <span>
+                            {requirement.category}
+                          </span>
+
+                          <span>
+                            {requirement.importance}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="requirement-confidence">
+                        <strong>
+                          {formatConfidence(
+                            requirement.confidence,
+                          )}
+                        </strong>
+
+                        <span>
+                          {getStatusLabel(
+                            requirement.match_status,
+                          )}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="requirement-context">
+                      {requirement.context}
+                    </p>
+
+                    <div className="requirement-reason">
+                      <CircleAlert size={15} />
+
+                      <span>
+                        {requirement.reason}
+                      </span>
+                    </div>
+
+                    {requirement.evidence_ids?.length >
+                      0 && (
+                      <div className="requirement-evidence">
+                        <span className="evidence-label">
+                          Supporting evidence
+                        </span>
+
+                        <span className="evidence-count">
+                          {requirement.evidence_ids.length}{' '}
+                          record
+                          {requirement.evidence_ids.length ===
+                          1
+                            ? ''
+                            : 's'}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <span className="fit-match-count">
-                  {fit.matched_requirements} /{' '}
-                  {fit.total_requirements} matched
+          {/* ROLE DESCRIPTION */}
+
+          <section className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">
+                  Role overview
+                </p>
+
+                <h2>
+                  About this opportunity
+                </h2>
+              </div>
+            </div>
+
+            <p className="job-full-description">
+              {job.description}
+            </p>
+          </section>
+        </section>
+
+        {/* RIGHT COLUMN */}
+
+        <aside className="job-intelligence-sidebar">
+          <section className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">
+                  Skill gaps
+                </p>
+
+                <h2>
+                  Areas to strengthen
+                </h2>
+              </div>
+
+              <CircleAlert size={20} />
+            </div>
+
+            {skill_gaps.length > 0 ? (
+              <div className="skill-gap-list">
+                {skill_gaps.map((gap) => (
+                  <div
+                    key={`${gap.requirement}-${gap.status}`}
+                    className={`skill-gap-item ${gap.status}`}
+                  >
+                    <div>
+                      {gap.status === 'partial' ? (
+                        <Sparkles size={16} />
+                      ) : (
+                        <XCircle size={16} />
+                      )}
+                    </div>
+
+                    <div>
+                      <strong>
+                        {gap.requirement}
+                      </strong>
+
+                      <span>
+                        {gap.status === 'partial'
+                          ? 'Partial supporting evidence'
+                          : 'No supporting evidence'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-intelligence-state">
+                <CheckCircle2 size={20} />
+
+                <strong>
+                  No identified skill gaps
+                </strong>
+
+                <span>
+                  Your current evidence covers the
+                  analyzed requirements.
                 </span>
               </div>
+            )}
+          </section>
 
-              <div className="fit-section">
-                <h3>
-                  <CheckCircle2 size={17} />
-                  Matched requirements
-                </h3>
+          {/* SCORE BREAKDOWN */}
 
-                {fit.matches?.filter(
-                    (match) => match.match_status === 'matched',
-                    ).length > 0 ? (
-                    <div className="requirement-list">
-                        {fit.matches
-                        .filter((match) => match.match_status === 'matched')
-                        .map((match, index) => (
-                            <div
-                            key={`${match.requirement}-${index}`}
-                            className="requirement-item matched"
-                            >
-                            <CheckCircle2 size={16} />
-                            <span>{match.requirement}</span>
-                            </div>
-                        ))}
-                    </div>
-                    ) : (
-                    <p className="muted-text">
-                        No direct matches found.
-                    </p>
-                    )}
+          <section className="panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">
+                  Fit analysis
+                </p>
+
+                <h2>
+                  Score breakdown
+                </h2>
+              </div>
+            </div>
+
+            <div className="score-breakdown-list">
+              <div>
+                <span>
+                  Matched requirement weight
+                </span>
+
+                <strong>
+                  {fit.matched_weight}
+                </strong>
               </div>
 
-              {fit.partial_requirements?.length > 0 && (
-                <div className="fit-section">
-                  <h3>
-                    <Sparkles size={17} />
-                    Partial matches
-                  </h3>
+              <div>
+                <span>
+                  Total requirement weight
+                </span>
 
-                  <div className="requirement-list">
-                    {fit.partial_requirements.map(
-                      (requirement) => (
-                        <div
-                          key={requirement}
-                          className="requirement-item partial"
-                        >
-                          <Sparkles size={16} />
-                          <span>{requirement}</span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              )}
+                <strong>
+                  {fit.total_weight}
+                </strong>
+              </div>
 
-              {fit.missing_requirements?.length > 0 && (
-                <div className="fit-section">
-                  <h3>
-                    <XCircle size={17} />
-                    Needs attention
-                  </h3>
+              <div>
+                <span>
+                  Direct matches
+                </span>
 
-                  <div className="requirement-list">
-                    {fit.missing_requirements.map(
-                      (requirement) => (
-                        <div
-                          key={requirement}
-                          className="requirement-item missing"
-                        >
-                          <XCircle size={16} />
-                          <span>{requirement}</span>
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              )}
+                <strong>
+                  {fit.matched_requirements}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  Partial matches
+                </span>
+
+                <strong>
+                  {fit.partial_requirements?.length || 0}
+                </strong>
+              </div>
+
+              <div>
+                <span>
+                  Missing requirements
+                </span>
+
+                <strong>
+                  {fit.missing_requirements?.length || 0}
+                </strong>
+              </div>
+            </div>
+          </section>
+
+          {/* APPLICATION CTA */}
+
+          <section className="application-cta panel">
+            <div className="cta-icon">
+              <Sparkles size={19} />
+            </div>
+
+            <p className="eyebrow">
+              Next step
+            </p>
+
+            <h2>
+              Prepare your application
+            </h2>
+
+            <p>
+              Use your verified candidate evidence to
+              generate a tailored application package.
+            </p>
 
             <Link
-                to={`/jobs/${jobId}/application`}
-                className="primary-button fit-button"
+              to={`/jobs/${jobId}/application`}
+              className="primary-button fit-button"
             >
-                <Sparkles size={16} />
-                Prepare application
+              <Sparkles size={16} />
+              Prepare application
             </Link>
-            </div>
-          )}
+          </section>
         </aside>
       </div>
     </div>

@@ -10,14 +10,14 @@ def verify_job(job: dict) -> dict:
     if source == "demo":
         return {
             "verification_status": "UNVERIFIED",
-            "verification_confidence": 0,
+            "verification_confidence": 0.0,
             "verification_reason": "Demo job; source has not been externally verified.",
         }
 
     if not url:
         return {
             "verification_status": "UNVERIFIED",
-            "verification_confidence": 0,
+            "verification_confidence": 0.0,
             "verification_reason": "No application URL is available.",
         }
 
@@ -44,26 +44,26 @@ def verify_job(job: dict) -> dict:
         if official:
             return {
                 "verification_status": "OFFICIAL_SOURCE",
-                "verification_confidence": 90,
+                "verification_confidence": 0.90,
                 "verification_reason": "Application link is reachable and matches the company's domain.",
             }
 
         if source in {"greenhouse", "lever"}:
             return {
                 "verification_status": "VERIFIED_SOURCE",
-                "verification_confidence": 85,
+                "verification_confidence": 0.85,
                 "verification_reason": f"Application link is reachable and the job was retrieved from the {source.title()} job-posting source.",
             }
 
         return {
             "verification_status": "LINK_REACHABLE",
-            "verification_confidence": 60,
+            "verification_confidence": 0.60,
             "verification_reason": "Application link is reachable, but the company domain could not be confirmed.",
         }
 
     except Exception:
         return {
             "verification_status": "UNVERIFIED",
-            "verification_confidence": 0,
+            "verification_confidence": 0.0,
             "verification_reason": "Application link could not be verified.",
         }

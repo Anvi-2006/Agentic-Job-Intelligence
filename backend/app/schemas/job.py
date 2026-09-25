@@ -36,19 +36,13 @@ class JobSearchResult(BaseModel):
     title: str
     company: str
     location: str | None
-    description: str
+    description_preview: str
     source: str
     job_url: str | None
-    fit_score: float
-    recommendation: str
-    recommendation_reason: str
-    matched_requirements: int
-    total_requirements: int
-    missing_requirements: list[str]
-    partial_requirements: list[str]
     verification_status: str
     verification_confidence: float
     verification_reason: str
+    discovery_score: float
 
 
 class JobSearchResponse(BaseModel):

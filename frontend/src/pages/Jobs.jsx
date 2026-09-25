@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   AlertCircle,
@@ -6,65 +5,43 @@ import {
   LoaderCircle,
   Search,
 } from 'lucide-react'
-
+import { useState } from 'react'
 
 import { searchJobs } from '../services/api'
 import JobCard from '../components/ui/JobCard'
 
 function Jobs() {
-  const [jobs, setJobs] = useState([])
   const [searchParams] = useSearchParams()
-  const [query, setQuery] = useState(
-    searchParams.get('query') || '',
-  )
-  const [loading, setLoading] = useState(true)
+
+  const initialQuery = searchParams.get('query') || ''
+
+  const [query, setQuery] = useState(initialQuery)
+  const [jobs, setJobs] = useState([])
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    let cancelled = false
+  async function runSearch(searchValue) {
+    const value = searchValue.trim()
 
-    async function loadJobs() {
-      try {
-        setLoading(true)
-        setError('')
-
-        const data = query.trim()
-          ? await searchJobs(query)
-          : []
-
-        if (!cancelled) setJobs(data)
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err.response?.data?.detail ||
-              'Unable to search jobs. Please try again.',
-          )
-        }
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+    if (!value) {
+      setJobs([])
+      setError('')
+      return
     }
-
-    loadJobs()
-
-    return () => {
-      cancelled = true
-    }
-  }, [query])
-
-  async function handleSearch(event) {
-    event.preventDefault()
-
-    const value = query.trim()
-    if (!value) return
 
     try {
       setLoading(true)
       setError('')
-      setJobs(await searchJobs(value))
+
+      const results = await searchJobs(value)
+
+      setJobs(results)
     } catch (err) {
+      console.error('Job search failed:', err)
+
       setError(
         err.response?.data?.detail ||
+          err.message ||
           'Unable to search jobs. Please try again.',
       )
     } finally {
@@ -72,15 +49,22 @@ function Jobs() {
     }
   }
 
+  function handleSearch(event) {
+    event.preventDefault()
+    runSearch(query)
+  }
+
   return (
     <div className="jobs-page">
       <section className="page-heading">
         <div>
           <p className="eyebrow">Job discovery</p>
+
           <h1>Find roles that fit you.</h1>
+
           <p>
-            ApplyIQ compares opportunities with your skills, experience, and
-            career goals.
+            ApplyIQ compares opportunities with your skills, experience,
+            and career goals.
           </p>
         </div>
 
@@ -92,6 +76,7 @@ function Jobs() {
 
       <form className="job-search-bar" onSubmit={handleSearch}>
         <Search size={18} />
+
         <input
           type="search"
           value={query}
@@ -99,13 +84,26 @@ function Jobs() {
           placeholder="Search by role, company, or skill..."
           aria-label="Search jobs"
         />
+
+        <button
+          type="submit"
+          className="primary-button"
+          disabled={loading || !query.trim()}
+        >
+          {loading ? 'Searching...' : 'Search'}
+        </button>
       </form>
 
       {loading && (
         <div className="state-card">
           <LoaderCircle className="loading-spinner" size={24} />
+
           <h3>Finding opportunities</h3>
-          <p>Loading jobs from your intelligence workspace.</p>
+
+          <p>
+            ApplyIQ is searching connected job sources and preparing
+            opportunities.
+          </p>
         </div>
       )}
 
@@ -114,7 +112,9 @@ function Jobs() {
           <div className="state-icon">
             <AlertCircle size={22} />
           </div>
+
           <h3>We couldn't load your jobs</h3>
+
           <p>{error}</p>
         </div>
       )}
@@ -124,9 +124,11 @@ function Jobs() {
           <div className="state-icon">
             <Search size={22} />
           </div>
-          <h3>No jobs found</h3>
+
+          <h3>Search for your next opportunity</h3>
+
           <p>
-            Try a different role, company, location, or skill.
+            Search by role, company, technology, or another skill.
           </p>
         </div>
       )}

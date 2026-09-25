@@ -63,26 +63,18 @@ def search_jobs_endpoint(
         )
 
     jobs = result.get("tool_result", {}).get("jobs", [])
-    ranked = {
-        job["job_id"]: job
-        for job in result.get("ranked_jobs", [])
-    }
 
     results = []
 
     for job in jobs:
-        ranking = ranked.get(job["job_id"])
+        verification = verify_job(job)
 
-        if ranking:
-            verification = verify_job(job)
-
-            results.append(
-                {
-                    **job,
-                    **ranking,
-                    **verification,
-                }
-            )
+        results.append(
+            {
+                **job,
+                **verification,
+            }
+        )
 
     return {
         "candidate_id": request.candidate_id,

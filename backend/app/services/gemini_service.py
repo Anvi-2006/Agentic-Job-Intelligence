@@ -111,7 +111,6 @@ def generate_search_intent_fallback(user_goal: str) -> dict:
         "delhi",
         "hyderabad",
         "chennai",
-        "remote",
     ]
 
     for location in location_keywords:
@@ -193,17 +192,12 @@ def generate_search_intent(user_goal: str) -> dict:
 
     query = user_goal.strip()
 
-    # Fast path for simple job-role searches
+    # Fast path for short/simple searches.
+    # Use the deterministic fallback parser so modifiers such as
+    # remote, hybrid, internship, and locations are still extracted.
     if query and len(query.split()) <= 4:
-        return {
-            "roles": [query.lower()],
-            "locations": [],
-            "experience_level": None,
-            "work_mode": None,
-            "employment_type": None,
-            "skills": [],
-            "company_preferences": [],
-        }
+        return generate_search_intent_fallback(query)
+
 
     prompt = f"""
 You are a job-search intent extraction assistant.

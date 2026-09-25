@@ -9,13 +9,13 @@ from sqlalchemy.orm import Session
 from backend.app.models.candidate_evidence import CandidateEvidence
 from backend.app.models.job_requirement import JobRequirement
 from backend.app.models.semantic_match_cache import SemanticMatchCache
+from backend.app.services.evidence_ranking_service import rank_evidence
 from backend.app.services.gemini_service import (
     evaluate_semantic_requirement_matches,
 )
 from backend.app.services.semantic_search_service import (
     search_candidate_evidence_batch,
 )
-
 
 # ---------------------------------------------------------------------------
 # Matching configuration
@@ -441,7 +441,66 @@ def _load_candidate_evidence(
         .all()
     )
 
+def _rank_matched_evidence(
+    evidence: list[CandidateEvidence],
+    requirement: JobRequirement,
+    limit: int = 3,
+) -> list[CandidateEvidence]:
+    """
+    Rank already-matched evidence and keep only the strongest supporting
+    records.
 
+    Deterministic matching decides WHETHER evidence supports a requirement.
+    This function decides WHICH supporting evidence should be exposed to
+    downstream consumers.
+
+    The goal is to avoid returning every resume record that happens to
+    mention a common technology such as Python.
+    """
+    if not evidence:
+        return []
+
+    requirement_name = _requirement_name(requirement)
+
+    ranking_input = [
+        {
+            "evidence_id": str(item.id),
+            "title": item.title,
+            "content": item.content,
+            "category": item.category,
+            "source": item.source,
+        }
+        for item in evidence
+    ]
+
+    ranked = rank_evidence(
+        evidence=ranking_input,
+        requirements=[requirement_name],
+    )
+
+    ranked_ids = [
+        item.evidence_id
+        for item in ranked
+    ]
+
+    evidence_by_id = {
+        str(item.id): item
+        for item in evidence
+    }
+
+    ordered_evidence = [
+        evidence_by_id[evidence_id]
+        for evidence_id in ranked_ids
+        if evidence_id in evidence_by_id
+    ]
+
+    # Defensive fallback: if the ranking service cannot rank a particular
+    # deterministic match, preserve the original evidence rather than
+    # dropping valid support.
+    if not ordered_evidence:
+        ordered_evidence = evidence
+
+    return ordered_evidence[:limit]
 # ---------------------------------------------------------------------------
 # Semantic cache helpers
 # ---------------------------------------------------------------------------
@@ -735,6 +794,12 @@ def match_job_requirements(
                 matched_evidence.append(evidence)
 
         if matched_evidence:
+            matched_evidence = _rank_matched_evidence(
+                evidence=matched_evidence,
+                requirement=requirement,
+                limit=3,
+            )
+
             results.append(
                 {
                     "requirement": requirement_name,
@@ -793,9 +858,20 @@ def match_job_requirements(
                 )
 
         if related_matches:
+            related_evidence = [
+                evidence
+                for evidence, _ in related_matches
+            ]
+
+            related_evidence = _rank_matched_evidence(
+                evidence=related_evidence,
+                requirement=requirement,
+                limit=3,
+            )
+
             evidence_ids = [
                 evidence.id
-                for evidence, _ in related_matches
+                for evidence in related_evidence
             ]
 
             related_names = sorted(

@@ -4,12 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from backend.app.core.database import get_db
-from backend.app.schemas.job_understanding import JobUnderstandingResponse
+from backend.app.schemas.job_understanding import (
+    JobRequirementUnderstanding,
+    JobUnderstandingResponse,
+)
 from backend.app.services.job_service import get_job
 from backend.app.services.job_understanding_service import (
-    extract_job_requirements,
+    understand_job_requirements,
     save_job_requirements,
 )
+
 
 router = APIRouter(
     prefix="/api/job-understanding",
@@ -33,9 +37,11 @@ def understand_job_endpoint(
             detail="Job not found",
         )
 
-    requirements = extract_job_requirements(job.description)
+    requirements = understand_job_requirements(
+        job.description
+    )
 
-    save_job_requirements(
+    saved_requirements = save_job_requirements(
         db=db,
         job_id=job.id,
         requirements=requirements,
@@ -43,6 +49,21 @@ def understand_job_endpoint(
 
     return JobUnderstandingResponse(
         job_id=job.id,
-        requirements=requirements,
-        total_requirements=len(requirements),
+        requirements=[
+            JobRequirementUnderstanding(
+                requirement=item.requirement,
+                normalized_name=item.normalized_name,
+                original_text=item.original_text,
+                context=item.context,
+                requirement_type=item.requirement_type,
+                category=item.category,
+                importance=item.importance,
+                confidence=item.confidence,
+                source=item.source,
+            )
+            for item in saved_requirements
+        ],
+        total_requirements=len(
+            saved_requirements
+        ),
     )

@@ -9,6 +9,8 @@ class RequirementMatchResponse(BaseModel):
     matched: bool
     evidence_ids: list[UUID]
     match_status: str
+    reason: str
+    confidence: float
 
 
 class JobMatchingResponse(BaseModel):

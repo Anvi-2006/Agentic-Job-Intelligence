@@ -1,4 +1,11 @@
-import { ArrowUpRight, Building2, MapPin } from 'lucide-react'
+import {
+  ArrowUpRight,
+  Building2,
+  ExternalLink,
+  MapPin,
+  ShieldCheck,
+  ShieldAlert,
+} from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 
 function JobCard({ job }) {
@@ -8,8 +15,12 @@ function JobCard({ job }) {
     navigate(`/jobs/${job.id}`)
   }
 
-  const score = job.fit_score
-  const recommendation = job.recommendation?.replace('_', ' ')
+  const verificationStatus = job.verification_status
+
+  const isVerified =
+    verificationStatus === 'VERIFIED_SOURCE' ||
+    verificationStatus === 'OFFICIAL_SOURCE' ||
+    verificationStatus === 'LINK_REACHABLE'
 
   return (
     <article className="job-card">
@@ -49,70 +60,43 @@ function JobCard({ job }) {
               : 'No description available.'}
           </p>
 
-          {score !== undefined && (
-            <div className="job-intelligence">
-              <div className="fit-score">
-                <strong>{Math.round(score)}%</strong>
-                <span>fit</span>
-              </div>
-
-              <span className="recommendation">
-                {recommendation}
-              </span>
-
-              <span className="requirements-summary">
-                {job.matched_requirements} direct
-              </span>
-
-              <span className="requirements-summary">
-                {job.partial_requirements?.length || 0} partial
-              </span>
-
-              <span className="requirements-summary">
-                {job.missing_requirements?.length || 0} missing
-              </span>
-            </div>
-          )}
-
-          {job.recommendation_reason && (
-            <p className="recommendation-reason">
-              {job.recommendation_reason}
-            </p>
-          )}
-
-          {job.verification_status && (
+          {verificationStatus && (
             <div className="job-verification">
-              <span className="verification-status">
-                {job.verification_status === 'VERIFIED_SOURCE'
-                  ? '✓ Verified source'
-                  : job.verification_status === 'OFFICIAL_SOURCE'
-                    ? '✓ Official source'
-                    : job.verification_status === 'LINK_REACHABLE'
-                      ? '✓ Link reachable'
-                      : '⚠ Unverified'}
+              <span
+                className={`verification-status ${
+                  isVerified ? 'verified' : 'unverified'
+                }`}
+              >
+                {isVerified ? (
+                  <>
+                    <ShieldCheck size={14} />
+                    {verificationStatus === 'OFFICIAL_SOURCE'
+                      ? 'Official source'
+                      : verificationStatus === 'VERIFIED_SOURCE'
+                        ? 'Verified source'
+                        : 'Link reachable'}
+                  </>
+                ) : (
+                  <>
+                    <ShieldAlert size={14} />
+                    Unverified source
+                  </>
+                )}
               </span>
 
               <span className="verification-confidence">
-                {Math.round(job.verification_confidence)}% confidence
+                {Math.round(
+                  (job.verification_confidence || 0) * 100,
+                )}
+                % confidence
               </span>
             </div>
           )}
 
-          {(job.missing_requirements?.length > 0 ||
-            job.partial_requirements?.length > 0) && (
-            <div className="requirement-gaps">
-              {job.partial_requirements?.map((item) => (
-                <span key={`partial-${item}`} className="partial-tag">
-                  Partial: {item}
-                </span>
-              ))}
-
-              {job.missing_requirements?.map((item) => (
-                <span key={`missing-${item}`} className="missing-tag">
-                  Missing: {item}
-                </span>
-              ))}
-            </div>
+          {job.verification_reason && (
+            <p className="verification-reason">
+              {job.verification_reason}
+            </p>
           )}
         </div>
       </div>
@@ -123,9 +107,21 @@ function JobCard({ job }) {
           className="secondary-button"
           onClick={handleViewJob}
         >
-          View job
+          View intelligence
           <ArrowUpRight size={15} />
         </button>
+
+        {job.job_url && (
+          <a
+            className="job-external-link"
+            href={job.job_url}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink size={14} />
+            Source
+          </a>
+        )}
       </div>
     </article>
   )

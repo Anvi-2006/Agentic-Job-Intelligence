@@ -52,15 +52,11 @@ def build_search_graph():
     graph.add_node("initialize", initialize_agent)
     graph.add_node("understand_intent", understand_search_intent)
     graph.add_node("search_jobs", search_jobs_node)
-    graph.add_node("understand_jobs", understand_jobs_node)
-    graph.add_node("rank_jobs", rank_jobs_node)
 
     graph.add_edge(START, "initialize")
     graph.add_edge("initialize", "understand_intent")
     graph.add_edge("understand_intent", "search_jobs")
-    graph.add_edge("search_jobs", "understand_jobs")
-    graph.add_edge("understand_jobs", "rank_jobs")
-    graph.add_edge("rank_jobs", END)
+    graph.add_edge("search_jobs", END)
 
     return graph.compile()
 

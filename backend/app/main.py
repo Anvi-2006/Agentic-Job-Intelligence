@@ -26,6 +26,7 @@ from backend.app.api.application_execution import router as application_executio
 from backend.app.api.human_input import (
     router as human_input_router,
 )
+from backend.app.api.job_intelligence import router as job_intelligence_router
 
 
 app = FastAPI(
@@ -72,6 +73,7 @@ app.include_router(resume_upload_router)
 app.include_router(application_execution_router)
 app.include_router(execution_events_router)
 app.include_router(human_input_router)
+app.include_router(job_intelligence_router)
 
 @app.get("/")
 def root():
