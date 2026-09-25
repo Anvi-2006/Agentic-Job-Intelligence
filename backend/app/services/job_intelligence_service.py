@@ -5,8 +5,11 @@ from sqlalchemy.orm import Session
 from backend.app.services.job_fit_service import calculate_job_fit_score
 from backend.app.services.job_requirement_service import get_job_requirements
 from backend.app.services.job_service import get_job
+from backend.app.services.job_understanding_service import (
+    understand_job_requirements,
+    save_job_requirements,
+)
 from backend.app.services.job_verification_service import verify_job
-
 
 def get_job_intelligence(
     db: Session,
@@ -32,6 +35,17 @@ def get_job_intelligence(
         db=db,
         job_id=job_id,
     )
+
+    if not requirements:
+        understood_requirements = understand_job_requirements(
+            job.description
+        )
+
+        requirements = save_job_requirements(
+            db=db,
+            job_id=job.id,
+            requirements=understood_requirements,
+        )
 
     verification = verify_job(
         {
