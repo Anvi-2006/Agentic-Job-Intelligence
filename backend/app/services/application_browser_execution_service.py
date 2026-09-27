@@ -13,6 +13,7 @@ from backend.app.services.application_execution_service import (
     EXECUTION_STATUS_EXECUTING,
     EXECUTION_STATUS_NEEDS_HUMAN,
     _get_execution,
+    mark_execution_failed,
 )
 from backend.app.services.execution_event_service import (
     record_execution_event,
@@ -313,8 +314,18 @@ def execute_application_browser_step(
                 },
             }
 
-    except Exception:
+    except Exception as exc:
         db.rollback()
+
+        try:
+            mark_execution_failed(
+                db=db,
+                application_id=application_id,
+                failure_reason=str(exc),
+            )
+        except Exception:
+            db.rollback()
+
         raise
 
     finally:
