@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pathlib import Path
 
 from playwright.sync_api import Locator
 
@@ -230,6 +231,21 @@ class ApplicationBrowserAgent:
         if not file_path.strip():
             raise ValueError(
                 "Browser upload file path cannot be empty."
+            )
+
+        upload_root = (
+            Path("uploads/resumes")
+            .resolve()
+        )
+        upload_path = Path(file_path).resolve()
+
+        if (
+            upload_path.parent != upload_root
+            or not upload_path.is_file()
+        ):
+            raise ValueError(
+                "Browser upload file must be an existing "
+                "resume inside uploads/resumes."
             )
 
         self.session.page.locator(
