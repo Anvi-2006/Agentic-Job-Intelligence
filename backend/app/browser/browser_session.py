@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 from playwright.sync_api import Page
 
 from backend.app.browser.browser_manager import BrowserManager
@@ -17,6 +19,18 @@ class BrowserSession:
     def open_url(self, url: str) -> None:
         if not url.strip():
             raise ValueError("Browser URL cannot be empty.")
+
+        parsed_url = urlparse(url)
+
+        if parsed_url.scheme not in {"http", "https"}:
+            raise ValueError(
+                "Browser URL must use http or https."
+            )
+
+        if not parsed_url.netloc:
+            raise ValueError(
+                "Browser URL must include a valid host."
+            )
 
         self.page.goto(
             url,
