@@ -1,6 +1,10 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+
+class JobRankingRequest(BaseModel):
+    job_ids: list[UUID] = Field(min_length=1)
 
 
 class RankedJobResponse(BaseModel):

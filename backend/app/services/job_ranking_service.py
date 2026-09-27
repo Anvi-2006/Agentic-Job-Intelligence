@@ -59,11 +59,25 @@ def rank_jobs_for_candidate(
     if not job_ids:
         return []
 
+    unique_job_ids = list(dict.fromkeys(job_ids))
+
     jobs = (
         db.query(Job)
-        .filter(Job.id.in_(job_ids))
+        .filter(Job.id.in_(unique_job_ids))
         .all()
     )
+
+    found_job_ids = {str(job.id) for job in jobs}
+    missing_job_ids = [
+        job_id
+        for job_id in unique_job_ids
+        if job_id not in found_job_ids
+    ]
+
+    if missing_job_ids:
+        raise ValueError(
+            f"Jobs not found: {', '.join(missing_job_ids)}"
+        )
 
     ranked_jobs = []
 
