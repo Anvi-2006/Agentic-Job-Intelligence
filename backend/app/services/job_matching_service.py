@@ -324,8 +324,14 @@ def _exact_match(
 
         if variant and (
             variant == evidence_title
-            or variant in evidence_title
-            or variant in evidence_content
+            or re.search(
+                rf"(?<![a-z0-9+#.]){re.escape(variant)}(?![a-z0-9+#.])",
+                evidence_title,
+            )
+            or re.search(
+                rf"(?<![a-z0-9+#.]){re.escape(variant)}(?![a-z0-9+#.])",
+                evidence_content,
+            )
         ):
             return True
 
