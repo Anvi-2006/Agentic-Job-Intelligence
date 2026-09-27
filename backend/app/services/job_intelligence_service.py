@@ -11,18 +11,16 @@ from backend.app.services.job_understanding_service import (
 )
 from backend.app.services.job_verification_service import verify_job
 
-def get_job_intelligence(
+def ensure_job_requirements(
     db: Session,
-    candidate_id: UUID,
     job_id: UUID,
-) -> dict:
+):
     """
-    Build the unified intelligence view for a candidate-job pair.
+    Return persisted requirements for a job.
 
-    This service orchestrates existing domain services.
-    It does not duplicate matching or scoring logic.
+    If the job has not been analyzed yet, understand its description
+    and persist the structured requirements first.
     """
-
     job = get_job(
         db=db,
         job_id=job_id,
@@ -46,6 +44,34 @@ def get_job_intelligence(
             job_id=job.id,
             requirements=understood_requirements,
         )
+
+    return requirements
+
+
+def get_job_intelligence(
+    db: Session,
+    candidate_id: UUID,
+    job_id: UUID,
+) -> dict:
+    """
+    Build the unified intelligence view for a candidate-job pair.
+
+    This service orchestrates existing domain services.
+    It does not duplicate matching or scoring logic.
+    """
+
+    job = get_job(
+        db=db,
+        job_id=job_id,
+    )
+
+    if job is None:
+        raise ValueError("Job not found.")
+
+    requirements = ensure_job_requirements(
+        db=db,
+        job_id=job_id,
+    )
 
     verification = verify_job(
         {

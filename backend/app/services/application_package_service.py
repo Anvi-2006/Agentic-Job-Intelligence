@@ -26,9 +26,7 @@ from backend.app.services.gemini_service import (
 from backend.app.services.job_fit_service import (
     calculate_job_fit_score,
 )
-from backend.app.services.job_understanding_service import (
-    extract_job_requirements,
-)
+from backend.app.services.job_intelligence_service import ensure_job_requirements
 
 
 MAX_REPAIR_ATTEMPTS = 2
@@ -173,9 +171,13 @@ def generate_application_package(
         missing_requirements=fit["missing_requirements"],
     )
 
-    requirements = extract_job_requirements(
-        job.description
-    )
+    requirements = [
+        requirement.requirement
+        for requirement in ensure_job_requirements(
+            db=db,
+            job_id=job_id,
+        )
+    ]
 
     ai_package = generate_complete_application_package(
         job_title=job.title,

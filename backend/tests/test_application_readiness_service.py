@@ -38,7 +38,7 @@ def test_calculate_application_readiness():
 
         assert result["fit_score"] == 70.0
 
-        assert result["readiness_score"] == 75.0
+        assert result["readiness_score"] == 70.0
         assert result["readiness_level"] == "review"
         assert result["recommendation"] == "REVIEW"
 

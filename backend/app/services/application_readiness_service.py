@@ -22,13 +22,14 @@ def calculate_application_readiness(
         job_id=job_id,
     )
 
-    evidence_count = (
-        db.query(CandidateEvidence)
-        .filter(
-            CandidateEvidence.candidate_id == candidate_id
-        )
-        .count()
-    )
+    supporting_evidence_ids = {
+        evidence_id
+        for match in fit["matches"]
+        for evidence_id in match.get("evidence_ids", [])
+        if evidence_id
+    }
+
+    evidence_count = len(supporting_evidence_ids)
 
     matched_count = fit["matched_requirements"]
     total_requirements = fit["total_requirements"]
@@ -40,10 +41,6 @@ def calculate_application_readiness(
         readiness_score = 0.0
     else:
         readiness_score = fit["score"]
-
-        # Verified candidate evidence improves application readiness.
-        if evidence_count >= 5:
-            readiness_score += 5
 
         # Missing requirements reduce readiness.
         readiness_score -= len(missing_requirements) * 3
@@ -85,18 +82,14 @@ def calculate_application_readiness(
             + ", ".join(missing_requirements)
         )
 
-    if evidence_count >= 5:
+    if evidence_count > 0:
         reasons.append(
-            "Candidate has sufficient verified evidence "
-            "for application preparation"
-        )
-    elif evidence_count > 0:
-        reasons.append(
-            "Candidate evidence exists but is limited"
+            f"{evidence_count} pieces of candidate evidence "
+            "support this application"
         )
     else:
         reasons.append(
-            "No verified candidate evidence is available"
+            "No candidate evidence directly supports this application"
         )
 
     return {
