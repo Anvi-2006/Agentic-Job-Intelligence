@@ -1,4 +1,7 @@
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from threading import Thread
 from uuid import UUID
 
 from backend.app.core.database import SessionLocal
@@ -6,6 +9,7 @@ from backend.app.models.application import Application
 from backend.app.models.application_execution import ApplicationExecution
 from backend.app.models.application_package import ApplicationPackage
 from backend.app.models.execution_event import ExecutionEvent
+from backend.app.models.human_input_request import HumanInputRequest
 from backend.app.services.application_browser_execution_service import (
     execute_application_browser_step,
 )
@@ -39,6 +43,7 @@ def main() -> None:
     temporary_application = None
     temporary_package = None
     temporary_execution = None
+    http_server = None
 
     try:
         source_application = db.get(
@@ -131,10 +136,27 @@ def main() -> None:
             f"{started['status']}"
         )
 
+        handler = partial(
+            SimpleHTTPRequestHandler,
+            directory=str(SCRIPT_DIRECTORY),
+        )
+
+        http_server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            handler,
+        )
+
+        http_server_thread = Thread(
+            target=http_server.serve_forever,
+            daemon=True,
+        )
+        http_server_thread.start()
+
+        server_port = http_server.server_address[1]
+
         unresolved_url = (
-            HUMAN_INTERVENTION_FORM
-            .resolve()
-            .as_uri()
+            f"http://127.0.0.1:{server_port}/"
+            f"{HUMAN_INTERVENTION_FORM.name}"
         )
 
         print(
@@ -192,9 +214,8 @@ def main() -> None:
         assert resumed["status"] == "executing"
 
         resolved_url = (
-            RESOLVED_FORM
-            .resolve()
-            .as_uri()
+            f"http://127.0.0.1:{server_port}/"
+            f"{RESOLVED_FORM.name}"
         )
 
         print(
@@ -294,7 +315,18 @@ def main() -> None:
         )
 
     finally:
+        if http_server is not None:
+            http_server.shutdown()
+            http_server.server_close()
+
         if temporary_execution is not None:
+            db.query(HumanInputRequest).filter(
+                HumanInputRequest.execution_id
+                == temporary_execution.id,
+            ).delete(
+                synchronize_session=False,
+            )
+
             db.query(ExecutionEvent).filter(
                 ExecutionEvent.execution_id
                 == temporary_execution.id,
