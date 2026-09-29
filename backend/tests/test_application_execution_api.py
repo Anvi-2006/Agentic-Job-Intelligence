@@ -586,3 +586,56 @@ def test_browser_execution_endpoint_returns_execution(
     assert body["current_step"] == 2
     assert body["current_action"] == "browser_fields_completed"
     assert body["submission_approved"] is False
+
+
+def test_browser_execution_endpoint_returns_needs_human(
+    monkeypatch,
+):
+    def fake_execute_application_browser_step(
+        application_id,
+        application_url,
+        headless,
+    ):
+        assert application_id == UUID(APPLICATION_ID)
+        assert application_url == "https://example.com/apply"
+        assert headless is True
+
+        return {
+            "execution_id": "11111111-1111-1111-1111-111111111111",
+            "application_id": APPLICATION_ID,
+            "status": "needs_human",
+            "current_step": 2,
+            "current_action": "browser_human_intervention",
+            "submission_approved": False,
+            "failure_reason": None,
+            "started_at": None,
+            "completed_at": None,
+            "created_at": None,
+            "updated_at": None,
+        }
+
+    monkeypatch.setattr(
+        execution_api,
+        "execute_application_browser_step",
+        fake_execute_application_browser_step,
+    )
+
+    client = TestClient(app)
+
+    response = client.post(
+        f"/api/applications/{APPLICATION_ID}/execution/browser",
+        json={
+            "application_url": "https://example.com/apply",
+            "headless": True,
+        },
+    )
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["application_id"] == APPLICATION_ID
+    assert body["status"] == "needs_human"
+    assert body["current_step"] == 2
+    assert body["current_action"] == "browser_human_intervention"
+    assert body["submission_approved"] is False
