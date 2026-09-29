@@ -48,3 +48,32 @@ def test_execute_upload_rejects_missing_resume_file():
         )
 
     session.page.locator.assert_not_called()
+def test_execute_plan_blocks_all_actions_when_human_intervention_is_required():
+    session = MagicMock()
+    agent = ApplicationBrowserAgent(session=session)
+
+    plan = {
+        "human_intervention_required": True,
+        "actions": [
+            {
+                "action": "fill",
+                "selector": "#email",
+                "value": "candidate@example.com",
+            },
+            {
+                "action": "needs_human",
+                "selector": "#portfolio",
+            },
+        ],
+    }
+
+    result = agent.execute_plan(plan)
+
+    assert result["status"] == "needs_human"
+    assert result["executed_actions"] == []
+    assert len(result["blocked_actions"]) == 1
+    assert result["blocked_actions"][0]["selector"] == "#portfolio"
+
+    session.fill_field.assert_not_called()
+    session.page.locator.assert_not_called()
+
