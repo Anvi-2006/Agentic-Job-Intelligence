@@ -1,3 +1,6 @@
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
+from threading import Thread
 from pathlib import Path
 from uuid import UUID
 
@@ -95,6 +98,7 @@ def main() -> None:
     temporary_application_id = None
     temporary_execution_id = None
     temporary_package_id = None
+    http_server = None
 
     try:
         source_application = db.get(
@@ -259,8 +263,27 @@ def main() -> None:
             page_path
         )
 
+        handler = partial(
+            SimpleHTTPRequestHandler,
+            directory=str(page_path.parent),
+        )
+
+        http_server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            handler,
+        )
+
+        http_server_thread = Thread(
+            target=http_server.serve_forever,
+            daemon=True,
+        )
+        http_server_thread.start()
+
+        server_port = http_server.server_address[1]
+
         application_url = (
-            page_path.resolve().as_uri()
+            f"http://127.0.0.1:{server_port}/"
+            f"{page_path.name}"
         )
 
         print(
@@ -351,6 +374,10 @@ def main() -> None:
         )
 
     finally:
+        if http_server is not None:
+            http_server.shutdown()
+            http_server.server_close()
+
         if page_path.exists():
             page_path.unlink()
 
