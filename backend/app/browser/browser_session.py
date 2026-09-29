@@ -36,6 +36,18 @@ class BrowserSession:
             url,
             wait_until="domcontentloaded",
         )
+        
+        final_url = urlparse(self.page.url)
+
+        if final_url.scheme not in {"http", "https"}:
+            raise ValueError(
+                "Browser URL must use http or https."
+            )
+
+        if not final_url.netloc:
+            raise ValueError(
+                "Browser URL must include a valid host."
+            )
 
     def get_page_title(self) -> str:
         return self.page.title()
