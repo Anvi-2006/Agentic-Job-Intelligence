@@ -226,6 +226,40 @@ def execute_application_browser_step(
                 plan=plan,
             )
 
+            if result.get("status") == "needs_human":
+                execution.status = EXECUTION_STATUS_NEEDS_HUMAN
+                execution.current_action = "browser_human_intervention"
+
+                record_execution_event(
+                    db=db,
+                    execution_id=execution.id,
+                    event_type="BROWSER_HUMAN_INTERVENTION_REQUIRED",
+                    step=execution.current_step + 1,
+                    action="browser_human_intervention",
+                    details=result.get(
+                        "message",
+                        "Human intervention is required.",
+                    ),
+                    success=True,
+                    commit=False,
+                )
+
+                db.commit()
+                db.refresh(execution)
+
+                return {
+                    "status": EXECUTION_STATUS_NEEDS_HUMAN,
+                    "application_id": str(application_id),
+                    "execution_id": str(execution.id),
+                    "form_detected": form_detected,
+                    "page": page_data,
+                    "plan": plan,
+                    "execution": {
+                        "current_step": execution.current_step,
+                        "current_action": execution.current_action,
+                    },
+                }
+
             if result.get("status") != "executed":
                 raise ValueError(
                     result.get(
